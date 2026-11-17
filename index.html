@@ -4,9 +4,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>小五數學練習</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpgJqVcPV46C6Rtz7whNIUZKIPm5hoxjY",
+      authDomain: "p5d-math.firebaseapp.com",
+      projectId: "p5d-math",
+      storageBucket: "p5d-math.firebasestorage.app",
+      messagingSenderId: "578211936126",
+      appId: "1:578211936126:web:c5e11e812bbb893187a52f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const statusEl = document.getElementById("status");
+
+    loginBtn.addEventListener("click", async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        statusEl.textContent = "登入失敗：" + error.message;
+      }
+    });
+
+    logoutBtn.addEventListener("click", () => signOut(auth));
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        loginBtn.hidden = true;
+        logoutBtn.hidden = false;
+        statusEl.textContent = "已登入：" + user.email;
+        try {
+          await addDoc(collection(db, "logins"), {
+            email: user.email,
+            uid: user.uid,
+            loggedInAt: serverTimestamp()
+          });
+        } catch (error) {
+          statusEl.textContent = "已登入，但記錄未能儲存：" + error.message;
+        }
+      } else {
+        loginBtn.hidden = false;
+        logoutBtn.hidden = true;
+        statusEl.textContent = "尚未登入";
+      }
+    });
+  </script>
 </head>
 <body>
   <h1>小五數學練習</h1>
-  <p>網站即將推出分數乘法練習。</p>
+  <p id="status">載入中……</p>
+  <button id="loginBtn" type="button">使用學校 Google 電郵登入</button>
+  <button id="logoutBtn" type="button" hidden>登出</button>
 </body>
 </html>
